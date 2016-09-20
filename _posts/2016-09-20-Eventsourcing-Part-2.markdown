@@ -15,7 +15,7 @@ public interface IEvent
 }
 ```
 
-This makes it easier to distinguis events from other types. And if you are to user somthing like nServicebus later it is a good thing to have.
+This makes it easier to distinguish events from other types. And if you are to user something like nServicebus later it is a good thing to have.
 Then lets make a another marker interface so that we can make different events belong to a certain object.
 
 ```cs
@@ -45,7 +45,7 @@ public class PersonCreated : IPersonEvent
     public string EMail { get; }
 }
 ```
-You should make them with equality comparer and imutable but in C# it takes up to much space, so it's only imutable here.
+You should make them with equality comparer and immutable but in C# it takes up to much space, so it's only immutable here.
 
 Now we have an event that can be handled by our object. But we need and object!
 
@@ -79,16 +79,16 @@ public class Person
 }
 ```
 
-The constructor takes an enumerable of the corrent eventtypes.
+The constructor takes an enumerable of the current event types.
 For each event it builds the state by calling ApplyChange
 Apply casts to dynamic so that the correct When function gets called.
-I have an When function for each and eventtype I Expect.
+I have an When function for each and event type I Expect.
 The When function is the function that sets all the properties.
 Of course you could use something fancier then dynamics to make sure the right when function gets called.
 There are plenty of examples out there that uses reflection and so on, you might wanna use that in production.
 
 
-I tend to follow aggregateroot thinking, or atleast my understanding of it. So my object has the following critierias:
+I tend to follow aggregate root thinking, or at least my understanding of it. So my object has the following criterias:
 
 * It can only operate on itself, does only know about it self
 * It must protect it self from ending up in the wrong state.
@@ -126,12 +126,12 @@ public void ApplyChange(TEvent paymentEvent)
 }
 ```
 
-But hey, thats two functions and a field! Yes thats correct. But whe only need to add them the first time.
+But hey, thats two functions and a field! Yes thats correct. But we only need to add them the first time.
 The CreateFunction takes in a command, checks that the person is not already set up (and should do all other check!)
-then it applys the change to the object. Since we want the exact same thing to happen when we run the create function and when we reply the eventstream, we set the properties in the When(PaymentCreated evt) function.
-But I also want to be able to save the yet uncommit events to a list so that when the object gets saved it save all my events.
+then it applies the change to the object. Since we want the exact same thing to happen when we run the create function and when we reply the eventstream, we set the properties in the When(PaymentCreated evt) function.
+But I also want to be able to save the yet events to a list so that when the object gets saved it save all my events.
 
-So, yet it's a very complicted way to make a object that we can create with an Id, Name and Email. And we cant even save it. To operate on our objects we will need some kind of repository. In this example project we will use commands and commandhandles to operate on the objects. the commandhandler will accept a command, find the object and apply the command to it. It will only ever find the objects by it's id. So lets create a simple repository.
+So, yet it's a very complicated way to make a object that we can create with an Id, Name and Email. And we cant even save it. To operate on our objects we will need some kind of repository. In this example project we will use commands and commandhandles to operate on the objects. the commandhandler will accept a command, find the object and apply the command to it. It will only ever find the objects by it's id. So lets create a simple repository.
 
 ```cs
 public class PersonRepository
@@ -165,9 +165,9 @@ public class PersonRepository
     }
 }
 ```
-This repository uses NEventstore to store the events. To be able to use NEventstore optimistic concurrency we use the same stream. That means that in a multithreaded environment where to commandhandlers execute on the same object,
+This repository uses NEventstore to store the events. To be able to use NEventstore optimistic concurrency we use the same stream. That means that in a multi-threaded environment where to commandhandlers execute on the same object,
 Only the first one will be able to commit. The second one will get a concurrencyexception.
-The CommitId is used to make sure we don't act on the same thing twice. If we in every command give the command a specific id to identify the command it self, we can use rabbit mq or simular that has AtLeast once delivery garantee. I will write a post about that later, but for now, just accept it as a fact.
+The CommitId is used to make sure we don't act on the same thing twice. If we in every command give the command a specific id to identify the command it self, we can use rabbit mq or similar that has AtLeast once delivery guarantee. I will write a post about that later, but for now, just accept it as a fact.
 
 So let's create a command and a commandhandler.
 
