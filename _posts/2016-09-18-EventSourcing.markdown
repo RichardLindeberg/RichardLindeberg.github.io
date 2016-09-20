@@ -31,6 +31,6 @@ We could have stored the events instead of the state, and we could let other sys
 Since this is for reporting you probably you use your favorite SQL server, the tables get modelled just exactly the way PO whants his informstion, since it doesn’t at all interfere with our Subscription Service. This is whats called a read model. The nice thing is that we can have as many read models as we need, since the read models doesn’t interfere with our Subscription Service. And we can replay the Events from the first day of our Subscription Service.
 If we need to tweak a report, just drop the data and replay the events from the begining of time after you changed the logic.
 
-I’ll write more about how to do all theese things in a later post.
-
 If you haven’t already seen: Greg Young – CQRS and Event Sourcing – Code on the Beach 2014, he has way more experience then me and as (even) better at explaining why this is it.
+
+[But lets coding]({% post_url 2016-09-20-Eventsourcing-Part-2 %})

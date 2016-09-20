@@ -4,6 +4,8 @@ title:  "Eventsourcing show me the code!"
 date:   2016-09-20 21:01:55 +0200
 categories: Eventsourcing
 ---
+If you haven't already read my first post on [Eventsourcing]({% post_url 2016-09-18-EventSourcing %}) you might wanna do that.
+
 I will start with explaining how I would go about creating a new Eventsourced system.
 First of I would make a marker interface for events:
 
