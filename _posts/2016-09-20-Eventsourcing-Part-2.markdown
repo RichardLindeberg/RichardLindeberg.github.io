@@ -198,3 +198,8 @@ public class CreatePersonCommandHandler
    }
 }
 ```
+
+Now we can execute the CreatePersonCommand and we will create a new person.
+The source code so far can be found at [https://github.com/RichardLindeberg/Blog.EventSourcing/tree/Part2](https://github.com/RichardLindeberg/Blog.EventSourcing/tree/Part2)
+
+Move on to the next part [Eventsourcing Part 3]({% post_url 2016-09-21-EventSourcing-part-3 %}) 
