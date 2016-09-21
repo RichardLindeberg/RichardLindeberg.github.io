@@ -21,6 +21,7 @@ Next up we add functions in the Person to handle the email commands.
 They are pretty similar, we first check that the command really is meant for this object.
 In the CorrectPersonEmail command we make sure that the person was created not more then 10 days ago.
 (Ohh and yes, I did a change from the last code and added CreatedAt in the PersonCreatedEvent, the poor bastards that created their Person before this will not be able to correct their emails.)
+
 ```cs
 public void CorrectEmail(CorrectPersonEmail correctPersonEmail)
 {
