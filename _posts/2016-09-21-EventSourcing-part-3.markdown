@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Eventsourcing part III"
+title:  "Eventsourcing part 3"
 date:   2016-09-21 21:50:00 +0200
 categories: Eventsourcing
 ---
