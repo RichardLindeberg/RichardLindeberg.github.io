@@ -32,7 +32,9 @@ For example, we have a system that handles people and their addresses. With SQL 
 When using eventsourcing you always save all events for the same aggregate to the same stream, and you always check for optimistic concurrency on that stream.
 
 #### Deferring of business decisions
+
 ##### CRUD way
+
 It means we can do this super trendy microservices things. If a product owner comes to us and says: I need a system that controls mobile subscriptions that we buy from this third part, you start the project and build a sleek nice UI and a simple logic for handling it.
 
 Then the product owner comes back and says:
@@ -43,6 +45,7 @@ PO is nice and doesn’t complain that he only gets information about the switch
 Then he comes back and says he needs to know how often subscriptions switch between different data rates. Same thing all over. You now start figuring out a perfect schema for handling all changes and add some extra tables and a lot of logic. The system is not so nice and simple anymore.
 
 ##### ES way
+
 We store what has happend (events), not current state. Then we can let other systems read those events. That way, we don’t change any logic in our Subscription Service when PO wants his reports, we build a new Subscription Reporting Service.
 
 This service does only handle the things that is important to it. So the first time we only implement handling of the SubscriptionTransfered event. And the second time only the DataRateChanged event.
