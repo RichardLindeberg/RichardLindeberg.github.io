@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Eventsourcing part 3"
+title:  "Eventsourcing part 3 - Same state different cause"
 date:   2016-09-21 21:50:00 +0200
 categories: Eventsourcing
 ---

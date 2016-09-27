@@ -1,47 +1,47 @@
 ---
 layout: post
-title:  "Eventsourcing part 4"
+title:  "Eventsourcing part 4 - Read models"
 date:   2016-09-24 20:00:00 +0200
 categories: Eventsourcing
 ---
-So I Part 2 and 3 where coded with nEventStore as repository. I haven't really written much about the storage itself but if you look in the source code you will see that i switched. 
-I did the switch just to be able to easier show some things thats very nice with EventSourcing. 
-Choosing nEventstore is good if you need to store in SQL server, but it is not a very active project at the moment so if you don't have constraints from the business saying you must run on SQL server, take a look at geteventstore.com. 
+So I Part 2 and 3 where coded with nEventStore as repository. I haven't really written much about the storage itself but if you look in the source code you will see that i switched.
+I did the switch just to be able to easier show some things thats very nice with EventSourcing.
+Choosing nEventstore is good if you need to store in SQL server, but it is not a very active project at the moment so if you don't have constraints from the business saying you must run on SQL server, take a look at geteventstore.com.
 It's super fast and has lots of nice features.
 In this post we will start looking at read models, and I did not want to introduce message queues. So I switched to eventstore that has good support from subscriptions.
 
 Our product owner (PO) is not very happy with us, the users of our super fancy system has a hard time remembering GUIDs when they want to change their name or email.
 
-Our system has no querying, so if you don't know the GUID you're screwed. PO says this is not acceptable in 2016, there must be a way to show all users, there must be a way to search for users etc. 
+Our system has no querying, so if you don't know the GUID you're screwed. PO says this is not acceptable in 2016, there must be a way to show all users, there must be a way to search for users etc.
 Very annoying since we have a model that only supports finding the user by a synthetic primary key. To please our PO we will need to find a way to list all users.
 
-To find all users that has a name that starts with R, we would need to read all streams, processes all events and then add all these person objects to a List and then do some linq magic over that list. 
+To find all users that has a name that starts with R, we would need to read all streams, processes all events and then add all these person objects to a List and then do some linq magic over that list.
 Do you think SQL server would be faster to find all people starting with the letter R, or ElasticSearch?
 
-Thats why we have read models, read models are models that store data in a way that is most efficient to their demand. 
+Thats why we have read models, read models are models that store data in a way that is most efficient to their demand.
 What does it mean?
-In a normal application we only have one model of our data. 
-We have a bunch of tables in a SQL server, we have it normalized so that our writing will be easy and we don't risk forgetting to update duplicate data in different tables. 
-When using Eventsourcing you need to have one model for writing, thats the eventstore, and at least one model for reading. 
-But if you need to make one, why not make as many as you need? For example, if you need free text search make a model in ElasticSearch, for reporting make some OLAP cubes. 
+In a normal application we only have one model of our data.
+We have a bunch of tables in a SQL server, we have it normalized so that our writing will be easy and we don't risk forgetting to update duplicate data in different tables.
+When using Eventsourcing you need to have one model for writing, thats the eventstore, and at least one model for reading.
+But if you need to make one, why not make as many as you need? For example, if you need free text search make a model in ElasticSearch, for reporting make some OLAP cubes.
 For that fraud detection use Neo4J. It totally depends on your needs! You will make models that fit you usages.
 
-Yes, it once again shows that it takes more to get started with eventsourcing. 
-If we had done this system in standard CRUD with SQL server, we could just have added a query with a few lines of code and would be on our way of pleasing PO. 
+Yes, it once again shows that it takes more to get started with eventsourcing.
+If we had done this system in standard CRUD with SQL server, we could just have added a query with a few lines of code and would be on our way of pleasing PO.
 But now we need a totally new storage model. sigh!
 
-So how do we implement one? If we are using [eventstore](https://geteventstore.com) they have the notion of subscriptions. 
-If we don't use that but instead roll out our own, or use nEventstore we would do slightly different but probably some kind of subscription. 
-You could of course use nServiceBus, rebus, Mastransit or other message tooling to do populate your read models, and I probably would if this was production grade. 
+So how do we implement one? If we are using [eventstore](https://geteventstore.com) they have the notion of subscriptions.
+If we don't use that but instead roll out our own, or use nEventstore we would do slightly different but probably some kind of subscription.
+You could of course use nServiceBus, rebus, Mastransit or other message tooling to do populate your read models, and I probably would if this was production grade.
 But for now our PO will not notice and we are doing this whole project mvp style. So don't build what you don't need, yet.
 
-In eventstore every Person we save will be it's own stream. But now we want to subscribe to every person, how do we do that? 
+In eventstore every Person we save will be it's own stream. But now we want to subscribe to every person, how do we do that?
 -"Ohh, it's quite simple. You make a projection that projects every event that are sent to a person stream over to a People stream."
 Sounds complicated? It's not that hard to do, exactly how they do it in eventstore we don't need to bother our already very overheated brains with.
 To enable projections make sure to start eventstore with projections enabled, and then make sure the built in ones are started.
 
-So start eventstore with "EventStore.ClusterNode.exe -RunProjections All", 
-log into the [webui](http://127.0.0.1:2113/), goto projections and start the ones there. 
+So start eventstore with "EventStore.ClusterNode.exe -RunProjections All",
+log into the [webui](http://127.0.0.1:2113/), goto projections and start the ones there.
 And then add a new one with the following code:
 
 ```js
@@ -75,7 +75,7 @@ private static PeopleReadModell Subscribe()
         }
 ```
 
-In this first version, we do a catchup subscription, which means we control how far we have subscribed. 
+In this first version, we do a catchup subscription, which means we control how far we have subscribed.
 Since every time we restart the application we will have to rebuild our read-model, since we don't persist it any where.
 And here is our super duper read-model:
 
@@ -125,15 +125,15 @@ public class PeopleReadModell : IPeopleReadModell
     }
 ```
 
- When we receive an event for personCreated, we add a row, when a Name has changed we change the name and when an email has been changed we change the email. 
+ When we receive an event for personCreated, we add a row, when a Name has changed we change the name and when an email has been changed we change the email.
  And notice here that we use the interface for IPersonEmailChanged, thats because we don't care any itsy tiny bit here why the email changed. We only want the newest possible email.
 
  Creating a read model, was not that hard but somewhat more work then using a CRUD style application. If we had used the CRUD style we would already have had the read-model.
 
- But now our PO comes over and says he want a report of how often people are changing their email. 
- We could quite easily just create a new model that only gets the IPersonEmailChanged or maybe the more concrete PersonEmailChanged and PersonEMailCorrected. 
+ But now our PO comes over and says he want a report of how often people are changing their email.
+ We could quite easily just create a new model that only gets the IPersonEmailChanged or maybe the more concrete PersonEmailChanged and PersonEMailCorrected.
  Then count them or maybe group them by dates, if we instead of just handling the events, but the headers in the stream as well.
- 
+
  ```cs
  public class EmailChangedEventAndDate
      {
@@ -187,20 +187,20 @@ public class PeopleReadModell : IPeopleReadModell
            return modell;
  ```
 
- This would had been much harder in a CRUD style application since we would have had to change the core logic of our beloved Person. 
- Adding functionality to the core of our system just because of reporting need is a smell to me. And even worse is that our PO would get an empty report until people started to change thier emails after our new release. 
- WIth eventsourcing we always create our read-models with data since the start of time, the systems first release that is. 
- 
- You would of course not just use in memory modells, since that would potentially be both slow and very tough on hardware specs. But you do it the same way. 
- But instead of saving to a dictionary or list, persist the data to best suited database you can find. 
- 
- You probably also noted that the read-modells are eventually consistent, they do not participate in the same transaction as the write. That means that you risk using stale data. 
- At first that seems quite troublesome, at least if you are used to the transaction have SQL world. But when you start reasoning about it, most reads in your system today is eventually consistent as well. 
- When you have a webpage that shows some data from the database, you have at least 10ms (probably way more) of technical not transaction bound things that happens before it's displayed on the end users screen. 
+ This would had been much harder in a CRUD style application since we would have had to change the core logic of our beloved Person.
+ Adding functionality to the core of our system just because of reporting need is a smell to me. And even worse is that our PO would get an empty report until people started to change thier emails after our new release.
+ WIth eventsourcing we always create our read-models with data since the start of time, the systems first release that is.
+
+ You would of course not just use in memory modells, since that would potentially be both slow and very tough on hardware specs. But you do it the same way.
+ But instead of saving to a dictionary or list, persist the data to best suited database you can find.
+
+ You probably also noted that the read-modells are eventually consistent, they do not participate in the same transaction as the write. That means that you risk using stale data.
+ At first that seems quite troublesome, at least if you are used to the transaction have SQL world. But when you start reasoning about it, most reads in your system today is eventually consistent as well.
+ When you have a webpage that shows some data from the database, you have at least 10ms (probably way more) of technical not transaction bound things that happens before it's displayed on the end users screen.
  _Unless of course you take a lock on everything that takes part in that view and hold that look until the user actively ends the transaction. _
- And then you have the slowest part of all, the end user staring at the screen, thinking about what to do next. Thats probably gonna take at least 10 seconds. And with subscriptions or message queues the latency is usually quite small and in the sub second range. 
- 
- And whats worse in most CRUD applications is that the consistency boundaries are not given to much of a though, which means that we usually don't have any good concurrency, and use last write wins kind of concurrency. 
- Because the transactions tend to span over multiple tables and do both updates and inserts, it's really really hard to do correct concurrency checks. On what tables and under what conditions do we need concurrency checks? 
- With eventsourcing we always do optimistic locking, we don't accept the write if there has been another write after we did the read. And you can if you want extent this out to the client *without* taking a lock in the database. 
- You send out the version to the client, and in the command the version is sent in, and is only processed if the version is correct. And that can be done without altering anything on the objects them self. 
+ And then you have the slowest part of all, the end user staring at the screen, thinking about what to do next. Thats probably gonna take at least 10 seconds. And with subscriptions or message queues the latency is usually quite small and in the sub second range.
+
+ And whats worse in most CRUD applications is that the consistency boundaries are not given to much of a though, which means that we usually don't have any good concurrency, and use last write wins kind of concurrency.
+ Because the transactions tend to span over multiple tables and do both updates and inserts, it's really really hard to do correct concurrency checks. On what tables and under what conditions do we need concurrency checks?
+ With eventsourcing we always do optimistic locking, we don't accept the write if there has been another write after we did the read. And you can if you want extent this out to the client *without* taking a lock in the database.
+ You send out the version to the client, and in the command the version is sent in, and is only processed if the version is correct. And that can be done without altering anything on the objects them self.

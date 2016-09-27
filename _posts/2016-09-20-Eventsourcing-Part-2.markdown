@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Eventsourcing show me the code!"
+title:  "Eventsourcing - Part 2 - show me the code!"
 date:   2016-09-20 21:01:55 +0200
 categories: Eventsourcing
 ---
@@ -202,4 +202,4 @@ public class CreatePersonCommandHandler
 Now we can execute the CreatePersonCommand and we will create a new person.
 The source code so far can be found at [https://github.com/RichardLindeberg/Blog.EventSourcing/tree/Part2](https://github.com/RichardLindeberg/Blog.EventSourcing/tree/Part2)
 
-Move on to the next part [Eventsourcing Part 3]({% post_url 2016-09-21-EventSourcing-part-3 %}) 
+Move on to the next part [Eventsourcing Part 3]({% post_url 2016-09-21-EventSourcing-part-3 %})
