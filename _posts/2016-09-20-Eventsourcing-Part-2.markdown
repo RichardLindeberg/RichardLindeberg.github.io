@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Eventsourcing - Part 2 - show me the code!"
+title:  "Eventsourcing part 2 - show me the code!"
 date:   2016-09-20 21:01:55 +0200
 categories: Eventsourcing
 ---
