@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Eventsourcing part 5 - constraints"
-date:   2016-09-18 21:33:55 +0200
+date:   2016-10-01 13:33:55 +0200
 categories: Eventsourcing
 ---
 This post will probably not make much sense if you did not start from the [beginning]({% post_url 2016-09-18-EventSourcing %})
