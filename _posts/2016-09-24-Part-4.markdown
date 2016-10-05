@@ -59,20 +59,20 @@ Now we have a stream that we could subscribe to, and get all events regarding pe
 
 ```cs
 private static PeopleReadModell Subscribe()
-        {
-            var store = new StoreFactory().GetStore();
+{
+    var store = new StoreFactory().GetStore();
 
-            var peopleModell = new PeopleReadModell();
+    var peopleModell = new PeopleReadModell();
 
-            var s = store.SubscribeToStreamFrom(
-                "people",
-                null,
-                CatchUpSubscriptionSettings.Default,
-                (subscription, @event) => peopleModell.Handle(@event.Event.ToIPersonEvent()),
-                subscription => Console.WriteLine("Started catchup"),
-                (subscription, reason, arg3) => Console.WriteLine("Dropped subscription"));
-            return peopleModell;
-        }
+    var s = store.SubscribeToStreamFrom(
+        "people",
+        null,
+        CatchUpSubscriptionSettings.Default,
+        (subscription, @event) => peopleModell.Handle(@event.Event.ToIPersonEvent()),
+        subscription => Console.WriteLine("Started catchup"),
+        (subscription, reason, arg3) => Console.WriteLine("Dropped subscription"));
+    return peopleModell;
+}
 ```
 
 In this first version, we do a catchup subscription, which means we control how far we have subscribed.
@@ -81,126 +81,126 @@ And here is our super duper read-model:
 
 ```cs
 public class PeopleReadModell : IPeopleReadModell
+{
+    private readonly Dictionary<Guid, NameAndEmail> _namesAndEmailsDictionary = new Dictionary<Guid, NameAndEmail>();
+
+    public IEnumerable<NameAndEmail> NameAndEmails => _namesAndEmailsDictionary.Values;
+
+    public void Handle(IPersonEvent evt)
     {
-        private readonly Dictionary<Guid, NameAndEmail> _namesAndEmailsDictionary = new Dictionary<Guid, NameAndEmail>();
-
-        public IEnumerable<NameAndEmail> NameAndEmails => _namesAndEmailsDictionary.Values;
-
-        public void Handle(IPersonEvent evt)
+        var created = evt as PersonCreated;
+        if (created != null)
         {
-            var created = evt as PersonCreated;
-            if (created != null)
-            {
-                Process(created);
-            }
-
-            var changed = evt as PersonNameChanged;
-            if (changed != null)
-            {
-                Process(changed);
-            }
-
-            var emailChanged = evt as IPersonEmailChanged;
-            if (emailChanged != null)
-            {
-                Process(emailChanged);
-            }
+            Process(created);
         }
 
-        private void Process(PersonCreated evt)
+        var changed = evt as PersonNameChanged;
+        if (changed != null)
         {
-            _namesAndEmailsDictionary.Add(evt.Id, new NameAndEmail() {Email = evt.Email, Name = evt.Name, PersonId = evt.Id});
+            Process(changed);
         }
 
-        private void Process(PersonNameChanged evt)
+        var emailChanged = evt as IPersonEmailChanged;
+        if (emailChanged != null)
         {
-            _namesAndEmailsDictionary[evt.Id].Name = evt.Name;
+            Process(emailChanged);
         }
-
-        private void Process(IPersonEmailChanged evt)
-        {
-            _namesAndEmailsDictionary[evt.Id].Name = evt.Email;
-        }
-
     }
+
+    private void Process(PersonCreated evt)
+    {
+        _namesAndEmailsDictionary.Add(evt.Id, new NameAndEmail() {Email = evt.Email, Name = evt.Name, PersonId = evt.Id});
+    }
+
+    private void Process(PersonNameChanged evt)
+    {
+        _namesAndEmailsDictionary[evt.Id].Name = evt.Name;
+    }
+
+    private void Process(IPersonEmailChanged evt)
+    {
+        _namesAndEmailsDictionary[evt.Id].Name = evt.Email;
+    }
+}
 ```
 
- When we receive an event for personCreated, we add a row, when a Name has changed we change the name and when an email has been changed we change the email.
- And notice here that we use the interface for IPersonEmailChanged, thats because we don't care any itsy tiny bit here why the email changed. We only want the newest possible email.
+When we receive an event for personCreated, we add a row, when a Name has changed we change the name and when an email has been changed we change the email.
+And notice here that we use the interface for IPersonEmailChanged, thats because we don't care any itsy tiny bit here why the email changed. We only want the newest possible email.
 
- Creating a read model, was not that hard but somewhat more work then using a CRUD style application. If we had used the CRUD style we would already have had the read-model.
+Creating a read model, was not that hard but somewhat more work then using a CRUD style application. If we had used the CRUD style we would already have had the read-model.
 
- But now our PO comes over and says he want a report of how often people are changing their email.
- We could quite easily just create a new model that only gets the IPersonEmailChanged or maybe the more concrete PersonEmailChanged and PersonEMailCorrected.
- Then count them or maybe group them by dates, if we instead of just handling the events, but the headers in the stream as well.
+But now our PO comes over and says he want a report of how often people are changing their email.
+We could quite easily just create a new model that only gets the IPersonEmailChanged or maybe the more concrete PersonEmailChanged and PersonEMailCorrected.
+Then count them or maybe group them by dates, if we instead of just handling the events, but the headers in the stream as well.
 
- ```cs
- public class EmailChangedEventAndDate
-     {
-         public EmailChangedEventAndDate()
-         {
+```cs
+public class EmailChangedEventAndDate
+{
+    public EmailChangedEventAndDate()
+    {
 
-         }
+    }
 
-         public EmailChangedEventAndDate(IPersonEmailChanged evt, DateTime created)
-         {
-             PersonId = evt.Id;
-             NewEmail = evt.Email;
-             CreatedAt = created;
-         }
+    public EmailChangedEventAndDate(IPersonEmailChanged evt, DateTime created)
+    {
+        PersonId = evt.Id;
+        NewEmail = evt.Email;
+        CreatedAt = created;
+    }
 
-         public Guid PersonId { get; set; }
+    public Guid PersonId { get; set; }
 
-         public string NewEmail { get; set; }
+    public string NewEmail { get; set; }
 
-         public DateTime CreatedAt { get; set; }
-     }
+    public DateTime CreatedAt { get; set; }
+}
 
- public class EmailChangesReadModell
-   {
-       private List<EmailChangedEventAndDate> _eventAndDate = new List<EmailChangedEventAndDate>();
+public class EmailChangesReadModell
+{
+    private List<EmailChangedEventAndDate> _eventAndDate = new List<EmailChangedEventAndDate>();
 
-       public IEnumerable<EmailChangedEventAndDate> EventAndDate => _eventAndDate;
+    public IEnumerable<EmailChangedEventAndDate> EventAndDate => _eventAndDate;
 
-       public void Handle(IPersonEvent evt, DateTime created)
-       {
-           var changed = evt as IPersonEmailChanged;
-           if (changed != null)
-           {
-               _eventAndDate.Add(new EmailChangedEventAndDate(changed, created));
-           }
-       }
+    public void Handle(IPersonEvent evt, DateTime created)
+    {
+        var changed = evt as IPersonEmailChanged;
+        if (changed != null)
+        {
+            _eventAndDate.Add(new EmailChangedEventAndDate(changed, created));
+        }
+    }
+}
+```
 
-   }
- ```
- and to subscribe
- ```cs
- var model = new EmailChangesReadModell();
+and to subscribe
 
-           var s = store.SubscribeToStreamFrom(
-               "people",
-               null,
-               CatchUpSubscriptionSettings.Default,
-               (subscription, @event) => modell.Handle(@event.Event.ToIPersonEvent(), @event.Event.Created),
-               subscription => Console.WriteLine("Started catchup"),
-               (subscription, reason, arg3) => Console.WriteLine("Dropped subscription"));
-           return modell;
- ```
+```cs
+var model = new EmailChangesReadModell();
 
- This would had been much harder in a CRUD style application since we would have had to change the core logic of our beloved Person.
- Adding functionality to the core of our system just because of reporting need is a smell to me. And even worse is that our PO would get an empty report until people started to change thier emails after our new release.
- WIth eventsourcing we always create our read-models with data since the start of time, the systems first release that is.
+var s = store.SubscribeToStreamFrom(
+    "people",
+    null,
+    CatchUpSubscriptionSettings.Default,
+    (subscription, @event) => modell.Handle(@event.Event.ToIPersonEvent(), @event.Event.Created),
+    subscription => Console.WriteLine("Started catchup"),
+    (subscription, reason, arg3) => Console.WriteLine("Dropped subscription"));
+return modell;
+```
 
- You would of course not just use in memory modells, since that would potentially be both slow and very tough on hardware specs. But you do it the same way.
- But instead of saving to a dictionary or list, persist the data to best suited database you can find.
+This would had been much harder in a CRUD style application since we would have had to change the core logic of our beloved Person.
+Adding functionality to the core of our system just because of reporting need is a smell to me. And even worse is that our PO would get an empty report until people started to change thier emails after our new release.
+WIth eventsourcing we always create our read-models with data since the start of time, the systems first release that is.
 
- You probably also noted that the read-modells are eventually consistent, they do not participate in the same transaction as the write. That means that you risk using stale data.
- At first that seems quite troublesome, at least if you are used to the transaction have SQL world. But when you start reasoning about it, most reads in your system today is eventually consistent as well.
- When you have a webpage that shows some data from the database, you have at least 10ms (probably way more) of technical not transaction bound things that happens before it's displayed on the end users screen.
- _Unless of course you take a lock on everything that takes part in that view and hold that look until the user actively ends the transaction. _
- And then you have the slowest part of all, the end user staring at the screen, thinking about what to do next. Thats probably gonna take at least 10 seconds. And with subscriptions or message queues the latency is usually quite small and in the sub second range.
+You would of course not just use in memory modells, since that would potentially be both slow and very tough on hardware specs. But you do it the same way.
+But instead of saving to a dictionary or list, persist the data to best suited database you can find.
 
- And whats worse in most CRUD applications is that the consistency boundaries are not given to much of a though, which means that we usually don't have any good concurrency, and use last write wins kind of concurrency.
- Because the transactions tend to span over multiple tables and do both updates and inserts, it's really really hard to do correct concurrency checks. On what tables and under what conditions do we need concurrency checks?
- With eventsourcing we always do optimistic locking, we don't accept the write if there has been another write after we did the read. And you can if you want extent this out to the client *without* taking a lock in the database.
- You send out the version to the client, and in the command the version is sent in, and is only processed if the version is correct. And that can be done without altering anything on the objects them self.
+You probably also noted that the read-modells are eventually consistent, they do not participate in the same transaction as the write. That means that you risk using stale data.
+At first that seems quite troublesome, at least if you are used to the transaction have SQL world. But when you start reasoning about it, most reads in your system today is eventually consistent as well.
+When you have a webpage that shows some data from the database, you have at least 10ms (probably way more) of technical not transaction bound things that happens before it's displayed on the end users screen.
+_Unless of course you take a lock on everything that takes part in that view and hold that look until the user actively ends the transaction. _
+And then you have the slowest part of all, the end user staring at the screen, thinking about what to do next. Thats probably gonna take at least 10 seconds. And with subscriptions or message queues the latency is usually quite small and in the sub second range.
+
+And whats worse in most CRUD applications is that the consistency boundaries are not given to much of a though, which means that we usually don't have any good concurrency, and use last write wins kind of concurrency.
+Because the transactions tend to span over multiple tables and do both updates and inserts, it's really really hard to do correct concurrency checks. On what tables and under what conditions do we need concurrency checks?
+With eventsourcing we always do optimistic locking, we don't accept the write if there has been another write after we did the read. And you can if you want extent this out to the client *without* taking a lock in the database.
+You send out the version to the client, and in the command the version is sent in, and is only processed if the version is correct. And that can be done without altering anything on the objects them self.
